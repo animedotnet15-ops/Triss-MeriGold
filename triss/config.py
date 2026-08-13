@@ -70,13 +70,11 @@ class Config:
     default_link_expiry_seconds: Optional[int] = field(default=None)  # None = never expires by default
     flood_wait_max_retries: int = field(default=5)
 
-    # Public HTTPS base URL of THIS bot's own web server (e.g. the Railway/
-    # Render public domain, or your VPS domain behind a reverse proxy).
-    # Required only when the Shortener is enabled: the shortener is
-    # configured to shorten a link back to *our own* /v/<session_id>
-    # verification-landing endpoint (not the raw Telegram deep link), so
-    # that reaching that endpoint is the one event that mints proof of
-    # having gone through the shortener flow. See triss/services/shortener.py.
+    # Public HTTPS base URL of this bot's own web server. NOT required or
+    # used by the current Shortener flow (which does time-window gating
+    # only — see triss/services/shortener.py module docstring); kept as an
+    # optional setting only in case a future provider-verification landing
+    # page is ever reintroduced.
     public_base_url: Optional[str] = field(default=None)
 
     # HMAC/hash secret used to bind verification proofs to their session.
