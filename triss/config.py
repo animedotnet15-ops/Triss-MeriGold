@@ -126,6 +126,19 @@ def load_config() -> Config:
         )
 
     public_base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/") or None
+    if public_base_url and not public_base_url.startswith(("http://", "https://")):
+        # Railway/Render dashboards show the public domain bare (no
+        # scheme) — copying it straight into PUBLIC_BASE_URL is a very
+        # easy mistake, and it silently breaks the Shortener at the
+        # urlparse() scheme check in triss/services/shortener.py with a
+        # confusing "malformed long_url" error. Self-heal it here (with a
+        # loud warning) instead of failing deep inside a request.
+        logger.warning(
+            "PUBLIC_BASE_URL=%r has no scheme; assuming https://. "
+            "Set it explicitly as 'https://%s' to silence this warning.",
+            public_base_url, public_base_url,
+        )
+        public_base_url = f"https://{public_base_url}"
 
     cfg = Config(
         api_id=api_id,
@@ -145,4 +158,5 @@ def load_config() -> Config:
 
 
 config = load_config()
+
 
