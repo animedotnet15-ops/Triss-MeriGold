@@ -76,6 +76,15 @@ class Config:
     # strongly recommended (see .env.example).
     verification_secret: str = field(default="")
 
+    # Public HTTPS base URL of THIS bot's own web server (e.g. the Railway/
+    # Render public domain, or your VPS domain behind a reverse proxy).
+    # Required only when the Shortener is enabled: the shortener is
+    # configured to shorten a link back to *our own* /v/<session_id>
+    # verification-landing endpoint (not the raw Telegram deep link), so
+    # that reaching that endpoint is the one event that mints proof of
+    # having gone through the shortener flow. See triss/services/shortener.py.
+    public_base_url: Optional[str] = field(default=None)
+
     def masked(self) -> dict:
         """Safe-for-logs representation. Never log real secrets/IDs verbatim in bulk."""
         return {
@@ -88,7 +97,6 @@ class Config:
             "log_channel_configured": self.log_channel_id is not None,
             "port": self.port,
         }
-
 
 def load_config() -> Config:
     api_id = _get_required_int("API_ID")
@@ -117,6 +125,8 @@ def load_config() -> Config:
             "Set VERIFICATION_SECRET explicitly in production (see .env.example)."
         )
 
+    public_base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/") or None
+
     cfg = Config(
         api_id=api_id,
         api_hash=api_hash,
@@ -128,6 +138,7 @@ def load_config() -> Config:
         log_channel_id=log_channel_id,
         port=port,
         verification_secret=verification_secret,
+        public_base_url=public_base_url,
     )
     logger.info("Configuration loaded: %s", cfg.masked())
     return cfg
