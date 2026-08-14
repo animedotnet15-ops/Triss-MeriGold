@@ -277,3 +277,4 @@ async def set_verification_status(session_id: str, status: str,
     if completed_at is not None:
         patch["completed_at"] = completed_at
     await database.verification_sessions.update_one({"session_id": session_id}, {"$set": patch})
+                           
