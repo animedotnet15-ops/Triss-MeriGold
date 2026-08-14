@@ -70,13 +70,6 @@ class Config:
     default_link_expiry_seconds: Optional[int] = field(default=None)  # None = never expires by default
     flood_wait_max_retries: int = field(default=5)
 
-    # Public HTTPS base URL of this bot's own web server. NOT required or
-    # used by the current Shortener flow (which does time-window gating
-    # only — see triss/services/shortener.py module docstring); kept as an
-    # optional setting only in case a future provider-verification landing
-    # page is ever reintroduced.
-    public_base_url: Optional[str] = field(default=None)
-
     # HMAC/hash secret used to bind verification proofs to their session.
     # Falls back to a value derived from BOT_TOKEN if not explicitly set,
     # so existing deployments keep working, but setting it explicitly is
@@ -115,8 +108,6 @@ def load_config() -> Config:
 
     port = _get_optional_int("PORT") or 8080
 
-    public_base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/") or None
-
     verification_secret = os.environ.get("VERIFICATION_SECRET", "").strip()
     if not verification_secret:
         import hashlib
@@ -136,7 +127,6 @@ def load_config() -> Config:
         storage_channel_id=storage_channel_id,
         log_channel_id=log_channel_id,
         port=port,
-        public_base_url=public_base_url,
         verification_secret=verification_secret,
     )
     logger.info("Configuration loaded: %s", cfg.masked())
@@ -144,3 +134,4 @@ def load_config() -> Config:
 
 
 config = load_config()
+
