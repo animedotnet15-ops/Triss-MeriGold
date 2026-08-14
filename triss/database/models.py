@@ -193,13 +193,13 @@ async def delete_latest_backup() -> bool:
 # set once at insert time and never trusted from client input.
 #
 # State machine (see triss.services.shortener.SessionState for the
-# canonical constants): CREATED -> VERIFIED -> CONSUMED, with
-# BYPASS / EXPIRED / INVALID / FAILED as terminal dead-ends reachable from
-# CREATED. Every transition below is a single atomic MongoDB
-# find_one_and_update filtered on the *current* expected status, so two
-# concurrent requests (double-click, duplicate update, replayed callback)
-# can never both win the same transition — only one caller ever receives
-# back a non-None document, and only that caller may proceed.
+# canonical constants): CREATED -> REDIRECTED -> VERIFIED -> CONSUMED,
+# with BYPASS / EXPIRED / INVALID / FAILED as terminal dead-ends reachable
+# from CREATED or REDIRECTED. Every transition below is a single atomic
+# MongoDB find_one_and_update filtered on the *current* expected status,
+# so two concurrent requests (double-click, duplicate update, replayed
+# callback) can never both win the same transition — only one caller ever
+# receives back a non-None document, and only that caller may proceed.
 
 VERIFICATION_TTL_GRACE_SECONDS = 300  # storage-hygiene buffer only, see mongodb.py
 
@@ -222,12 +222,14 @@ async def create_verification_session(user_id: int, access_token: str,
         "verification_status": "created",
         "expiration": now + maximum_seconds,
         "retry_count": retry_count,
+        "redirected_at": None,
         "completed_at": None,
         "consumed_at": None,
-        # Never store the raw proof — only a salted hash of it, minted at
-        # session creation (this flow does time-window gating only; there
-        # is no separate landing-page hit to mint it from — see
-        # triss/services/shortener.py module docstring).
+        # Never store the raw proof — only a salted hash of it. Minted once
+        # the session is legitimately redirected through our own landing
+        # route (triss/web/server.py `/v/<session_id>`) — NOT at creation —
+        # so reaching that route is itself part of what's being proven.
+        # See triss/services/shortener.py module docstring.
         "proof_hash": proof_hash,
         # Extension point for a future ShortenerProvider that genuinely
         # supports completion verification: a provider-issued reference
@@ -277,4 +279,5 @@ async def set_verification_status(session_id: str, status: str,
     if completed_at is not None:
         patch["completed_at"] = completed_at
     await database.verification_sessions.update_one({"session_id": session_id}, {"$set": patch})
-                           
+
+                                          
