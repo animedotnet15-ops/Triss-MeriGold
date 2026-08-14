@@ -327,3 +327,4 @@ async def start_command(client, message: Message) -> None:
         await _handle_verification_start(client, message, session_id, proof)
     else:
         await _handle_token_start(client, message, payload, settings)
+  
