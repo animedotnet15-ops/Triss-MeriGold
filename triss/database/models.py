@@ -207,6 +207,7 @@ VERIFICATION_TTL_GRACE_SECONDS = 300  # storage-hygiene buffer only, see mongodb
 async def create_verification_session(user_id: int, access_token: str,
                                        session_id: str, minimum_seconds: int,
                                        maximum_seconds: int,
+                                       bot_username: Optional[str] = None,
                                        proof_hash: Optional[str] = None) -> dict:
     now = time.time()
     retry_count = await database.verification_sessions.count_documents(
@@ -216,6 +217,10 @@ async def create_verification_session(user_id: int, access_token: str,
         "session_id": session_id,
         "user_id": user_id,
         "access_token": access_token,
+        # Stored so the /v/<session_id> landing route (hit later, outside
+        # any Telegram update context) can build the return deep link
+        # without needing its own pyrogram client access.
+        "bot_username": bot_username,
         "created_at": now,
         "minimum_time": minimum_seconds,
         "maximum_time": maximum_seconds,
@@ -280,4 +285,5 @@ async def set_verification_status(session_id: str, status: str,
         patch["completed_at"] = completed_at
     await database.verification_sessions.update_one({"session_id": session_id}, {"$set": patch})
 
-                                          
+
+                                       
