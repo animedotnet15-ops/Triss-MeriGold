@@ -24,10 +24,12 @@ A plain content token (`generate_token()`) is used standalone as the
 whole `?start=<token>` payload, so its whole 64-char budget is its own.
 `SESSION_ID_BYTES` in `triss.services.shortener` is a *different,
 smaller* budget because that token has to share the 64 chars with the
-literal `verify_` prefix, a `.` separator, AND a second random proof
-token in the same payload (`verify_<session_id>.<proof>`) — see the
-budget comment next to `SESSION_ID_BYTES` there before changing either
-size.
+literal `verify_` prefix AND a second random proof token concatenated
+directly into the same payload (`verify_<session_id><proof>`, no
+separator character — see that module's docstring for why a `.`
+separator specifically must never be reintroduced here: it broke every
+verification link when it was there) — see the budget comment next to
+`SESSION_ID_BYTES` there before changing either size.
 """
 
 from __future__ import annotations
@@ -57,3 +59,4 @@ def is_plausible_token(candidate: str) -> bool:
         return False
     allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
     return all(c in allowed for c in candidate)
+    
